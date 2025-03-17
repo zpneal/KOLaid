@@ -10,6 +10,7 @@
 #' @param include vector: names or indices of nodes that **must** be included on the KOL team
 #' @param exclude vector: names or indices of nodes that **can not** be included on the KOL team
 #' @param attribute string or vector: if \code{network} is an \code{igraph} object, the name of a node attribute. if \code{network} is an adjacency matrix, a vector containing a node attribute.
+#' @param weights vector: a vector of length 2 providing weights \eqn{\alpha} and \eqn{\beta}, where \eqn{0.5 \leq \alpha \leq 1} and \eqn{0 \leq \beta \leq 2}
 #' @param file string: filename to write a sorted list of possible KOL teams as a CSV.
 #'
 #' @details
@@ -20,10 +21,24 @@
 #' * Availability - The availability of individuals to serve as a KOL. This can be controlled by the \code{include} and \code{exclude} parameters.
 #' * Breadth - The fraction of non-KOLs that the KOL team can influence. When \code{goal=="diffusion"}, breadth is measured as the fraction of non-KOLs that a KOL team can reach in \code{m} steps (i.e., m-reach). When \code{goal=="adoption"}, breadth is measured as the fraction of non-KOLs that are directly connected to at least \code{m} KOLs (i.e., m-contact).
 #' * Cost - The number of KOLs to be recruited and trained (i.e., team size).
-#' * Diversity - The diversity of members of a KOL team with respect to a categorical \code{attribute} using Simpson's Index.
-#' * Evaluation - Among teams composed of available individuals, there are many ways to balance considerations of breadth,
-#'   cost, and diversity. \code{pick_kols}'s evaluation and ranking of teams uses (breadth x diversity)/cost, which is then
-#'   rescaled to a 0-1 range.
+#' * Diversity - The fraction of values of `attribute` represented on the KOL team.
+#' * Evaluation - Potential KOL teams must be compared and evaluated in a way that balances these considerations.
+#'
+#' **Evaluating KOL Teams**
+#'
+#' Potential KOL teams are evaluated on the basis of breadth (B), Cost (C), and (if `attribute` is provided), Diversity (D)
+#'    using \deqn{\frac{B}{C^\beta} \mbox{   or   } \frac{B^\alpha D^{1-\alpha}}{C^\beta}}
+#'
+#' The \eqn{\alpha} weight can take values \eqn{0.5 < \alpha < 1} and controls the weight placed on breadth relative to diversity.
+#'    The default (\eqn{\alpha = .8}) places the majority of weight on the breadth of the network that KOL teams cover, while still
+#'    considering the team's diversity. Smaller values of \eqn{\alpha} place less weight on breadth and more weight on diversity,
+#'    while larger values of \eqn{\alpha} place more weight on breadth and less weight on diversity.
+#'
+#' The \eqn{\beta} weight can take values \eqn{0 < \beta < 2} and controls the cost of larger KOL team members. The default (\eqn{beta = 1})
+#'    assumes that each additional team member has a linear cost. Smaller values of \eqn{\beta} imply decreasing marginal costs, while
+#'    larger values of \eqn{\beta} imply increasing marginal costs.
+#'
+#' **Interpreting Edge Direction**
 #'
 #' If \code{network} is a directed network, then \code{tosource} controls how the direction of edges is interpreted:
 #' * \code{tosource = TRUE} (default) - An edge i -> j is interpreted as "i gets information from j" or "i is influenced
@@ -59,6 +74,7 @@ pick_kols <- function(network,
                       include = NULL,
                       exclude = NULL,
                       attribute = NULL,
+                      weights = c(.8, 1),
                       file = NULL) {
 
   #### Parameter Checks ####
@@ -71,6 +87,9 @@ pick_kols <- function(network,
     if (!is.numeric(top)) {stop("`top` must be a positive integer")}
     if (top%%1!=0 | top<1) {stop("`top` must be a positive integer")}
   }
+  if (length(weights)!=2) {stop("`weights` must be a numeric vector of length 2")}
+  if (!is.numeric(weights[1]) | !is.numeric(weights[2])) {stop("`weights` must be a numeric vector of length 2")}
+  if (weights[1]<0.5 | weights[1]>1 | weights[2]<0 | weights[2]>2) {stop("the values in `weights` must be within the specified ranges")}
 
   #If `attribute` is supplied and `network` is an igraph object, ensure attribute is present and extract it
   if (!is.null(attribute) & methods::is(network,"igraph")) {
@@ -183,12 +202,11 @@ pick_kols <- function(network,
   if (!is.null(attribute)) {dat$diversity <- diversity}  #If requested, include team diversity
 
   #### Assign teams an overall evaluation ####
-  range01 <- function(x){if (max(x)==min(x)) {return(1)} else {return(((x-min(x))/(max(x)-min(x))))}}
-  if (!is.null(attribute)) {dat$evaluation <- range01((dat$breadth * dat$diversity)/dat$cost)}  #(breadth*diversity)/cost
-  if (is.null(attribute)) {dat$evaluation <- range01(dat$breadth/dat$cost)}  #breadth/cost
+  if (is.null(attribute)) {dat$evaluation <- dat$breadth / (dat$cost ^ weights[2])}
+  if (!is.null(attribute)) {dat$evaluation <- ((dat$breadth ^ weights[1]) * (dat$diversity & (1-weights[1]))) / (dat$cost ^ weights[2])}
 
   #### Sort and restrict team list ####
-  dat <- dat[order(-dat$evaluation, -dat$breadth),]  #Sort by overall evaluation, then by breadth
+  dat <- dat[order(-dat$evaluation, -dat$breadth),]  #Sort by overall evaluation, then break ties by breadth
   rownames(dat) <- c(1:nrow(dat))  #Renumber rows
 
   #### Write team list ####
