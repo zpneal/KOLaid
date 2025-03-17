@@ -203,7 +203,7 @@ pick_kols <- function(network,
 
   #### Assign teams an overall evaluation ####
   if (is.null(attribute)) {dat$evaluation <- dat$breadth / (dat$cost ^ weights[2])}
-  if (!is.null(attribute)) {dat$evaluation <- ((dat$breadth ^ weights[1]) * (dat$diversity & (1-weights[1]))) / (dat$cost ^ weights[2])}
+  if (!is.null(attribute)) {dat$evaluation <- ((dat$breadth ^ weights[1]) * (dat$diversity ^ (1-weights[1]))) / (dat$cost ^ weights[2])}
 
   #### Sort and restrict team list ####
   dat <- dat[order(-dat$evaluation, -dat$breadth, -dat$diversity),]  #Sort by overall evaluation, then break ties by breadth, then by diversity
