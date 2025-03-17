@@ -9,7 +9,7 @@
 #' @param top numeric: restrict scope to the \code{top} nodes with the highest degree, closeness, or betweenness (useful for large networks)
 #' @param include vector: names or indices of nodes that **must** be included on the KOL team
 #' @param exclude vector: names or indices of nodes that **can not** be included on the KOL team
-#' @param attribute string or vector: if \code{network} is an \code{igraph} object, the name of a categorical node attribute recorded as a factor. if \code{network} is an adjacency matrix, a factor containing a node attribute.
+#' @param attribute string or vector: if \code{network} is an \code{igraph} object, the name of a node attribute. if \code{network} is an adjacency matrix, a vector containing a node attribute.
 #' @param file string: filename to write a sorted list of possible KOL teams as a CSV.
 #'
 #' @details
@@ -40,7 +40,7 @@
 #' @examples
 #' network <- igraph::sample_smallworld(1,26,2,.2)  #An example network
 #' igraph::V(network)$name <- letters[1:26]  #Give the nodes names
-#' igraph::V(network)$gender <- factor(sample(c("M","F"),26,replace=TRUE))  #Give the nodes a "gender"
+#' igraph::V(network)$gender <- sample(c("M","F"),26,replace=TRUE)  #Give the nodes a "gender"
 #' teams <- pick_kols(network,              #Find KOL teams in `network`
 #'                    m = 2,
 #'                    min = 2,              #containing 2-4 members
@@ -76,11 +76,9 @@ pick_kols <- function(network,
   if (!is.null(attribute) & methods::is(network,"igraph")) {
     if (!(attribute %in% igraph::vertex_attr_names(network))) {stop("this igraph network does not contain a node attribute named `attribute`")}
     attrib <- igraph::vertex_attr(network, attribute)
-    if (!methods::is(attrib, "factor")) {stop("`attribute` must be a categorical attribute stored as a factor variable")}
   }
 
   if (!is.null(attribute) & methods::is(network,"matrix")) {
-    if (!is.factor(attribute)) {stop("the node `attribute` must be supplied as a factor")}
     if (length(attribute)!=nrow(network)) {stop("the length of the node `attribute` must match the number of nodes in `network`")}
     attrib <- attribute
   }
@@ -168,8 +166,8 @@ pick_kols <- function(network,
 
   #If requested, compute team diversity
   if (!is.null(attribute)) {
-    gini_simpson <- function(kols, attrib) {1 - sum((table(attrib[kols])/length(kols))^2)}  #Gini-Simpson index of diversity
-    diversity <- unlist(lapply(teams, FUN = function(x) gini_simpson(x, attrib)))
+    represented <- function(kols, attrib) {length(unique(attrib[kols])) / length(unique(attrib))}  #Fraction of node types represented on KOL team
+    diversity <- unlist(lapply(teams, FUN = function(x) represented(x, attrib)))
   }
 
   #### Compile team list ####
