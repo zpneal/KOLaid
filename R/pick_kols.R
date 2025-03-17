@@ -10,8 +10,7 @@
 #' @param include vector: names or indices of nodes that **must** be included on the KOL team
 #' @param exclude vector: names or indices of nodes that **can not** be included on the KOL team
 #' @param attribute string or vector: if \code{network} is an \code{igraph} object, the name of a categorical node attribute recorded as a factor. if \code{network} is an adjacency matrix, a factor containing a node attribute.
-#' @param best numeric: limit the results to the \code{best} best KOL teams, based on their overall evaluation
-#' @param file string: filename to write list of possible KOL teams as a CSV
+#' @param file string: filename to write a sorted list of possible KOL teams as a CSV.
 #'
 #' @details
 #' When seeking to diffuse a piece of information or encourage adoption of a behavior, it is often useful
@@ -35,7 +34,7 @@
 #'   edge points *away* from a source of information or influence). This type of data usually results from asking respondents
 #'   to report the people to whom they give advice. In this case, actors with high *out-degree* like *i* are generally better KOLs.
 #'
-#' @returns A list containing a data frame of possible KOL teams with their characteristics, the \code{network}, \code{m}, \code{goal}, and (optionally) \code{attribute}
+#' @returns A sorted list containing a data frame of possible KOL teams with their characteristics, the \code{network}, \code{m}, \code{goal}, and (optionally) \code{attribute}
 #' @export
 #'
 #' @examples
@@ -60,7 +59,6 @@ pick_kols <- function(network,
                       include = NULL,
                       exclude = NULL,
                       attribute = NULL,
-                      best = NULL,
                       file = NULL) {
 
   #### Parameter Checks ####
@@ -72,10 +70,6 @@ pick_kols <- function(network,
   if (!is.null(top)) {
     if (!is.numeric(top)) {stop("`top` must be a positive integer")}
     if (top%%1!=0 | top<1) {stop("`top` must be a positive integer")}
-  }
-  if (!is.null(best)) {
-    if (!is.numeric(best)) {stop("`best` must be a positive integer")}
-    if (best%%1!=0 | best<1) {stop("`best` must be a positive integer")}
   }
 
   #If `attribute` is supplied and `network` is an igraph object, ensure attribute is present and extract it
@@ -196,9 +190,8 @@ pick_kols <- function(network,
   if (is.null(attribute)) {dat$evaluation <- range01(dat$breadth/dat$cost)}  #breadth/cost
 
   #### Sort and restrict team list ####
-  dat <- dat[order(dat$evaluation, decreasing = TRUE),]  #Sort by overall evaluation
+  dat <- dat[order(-dat$evaluation, -dat$breadth),]  #Sort by overall evaluation, then by breadth
   rownames(dat) <- c(1:nrow(dat))  #Renumber rows
-  if (!is.null(best)) {dat <- dat[1:best,]}
 
   #### Write team list ####
   if (!is.null(file)) {utils::write.csv(dat, paste0(file,".csv"), row.names = FALSE)}
