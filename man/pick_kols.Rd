@@ -37,7 +37,7 @@ pick_kols(
 
 \item{exclude}{vector: names or indices of nodes that \strong{can not} be included on the KOL team}
 
-\item{attribute}{string or vector: if \code{network} is an \code{igraph} object, the name of a categorical node attribute recorded as a factor. if \code{network} is an adjacency matrix, a factor containing a node attribute.}
+\item{attribute}{string or vector: if \code{network} is an \code{igraph} object, the name of a node attribute. if \code{network} is an adjacency matrix, a vector containing a node attribute.}
 
 \item{file}{string: filename to write a sorted list of possible KOL teams as a CSV.}
 }
@@ -76,7 +76,7 @@ to report the people to whom they give advice. In this case, actors with high \e
 \examples{
 network <- igraph::sample_smallworld(1,26,2,.2)  #An example network
 igraph::V(network)$name <- letters[1:26]  #Give the nodes names
-igraph::V(network)$gender <- factor(sample(c("M","F"),26,replace=TRUE))  #Give the nodes a "gender"
+igraph::V(network)$gender <- sample(c("M","F"),26,replace=TRUE)  #Give the nodes a "gender"
 teams <- pick_kols(network,              #Find KOL teams in `network`
                    m = 2,
                    min = 2,              #containing 2-4 members
