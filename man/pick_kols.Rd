@@ -15,7 +15,6 @@ pick_kols(
   include = NULL,
   exclude = NULL,
   attribute = NULL,
-  best = NULL,
   file = NULL
 )
 }
@@ -40,12 +39,10 @@ pick_kols(
 
 \item{attribute}{string or vector: if \code{network} is an \code{igraph} object, the name of a categorical node attribute recorded as a factor. if \code{network} is an adjacency matrix, a factor containing a node attribute.}
 
-\item{best}{numeric: limit the results to the \code{best} best KOL teams, based on their overall evaluation}
-
-\item{file}{string: filename to write list of possible KOL teams as a CSV}
+\item{file}{string: filename to write a sorted list of possible KOL teams as a CSV.}
 }
 \value{
-A list containing a data frame of possible KOL teams with their characteristics, the \code{network}, \code{m}, \code{goal}, and (optionally) \code{attribute}
+A sorted list containing a data frame of possible KOL teams with their characteristics, the \code{network}, \code{m}, \code{goal}, and (optionally) \code{attribute}
 }
 \description{
 Pick key opinion leaders from a network given constraints
