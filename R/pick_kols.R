@@ -4,8 +4,7 @@
 #' @param tosource logical: edges point *toward* a source of information
 #' @param goal string: goal for the KOL team (either \code{"diffusion"} or \code{"adoption"})
 #' @param m integer: KOL team centrality parameter (\code{m == 1} is equivalent to simple degree centrality)
-#' @param min integer: minimum KOL team size
-#' @param max integer: maximum KOL team size
+#' @param range vector: a vector of length 2 containing the minimum and maximum number of KOLs on a team
 #' @param top numeric: restrict scope to the \code{top} nodes with the highest degree, closeness, or betweenness (useful for large networks)
 #' @param include vector: names or indices of nodes that **must** be included on the KOL team
 #' @param exclude vector: names or indices of nodes that **can not** be included on the KOL team
@@ -34,7 +33,7 @@
 #'    considering the team's diversity. Smaller values of \eqn{\alpha} place less weight on breadth and more weight on diversity,
 #'    while larger values of \eqn{\alpha} place more weight on breadth and less weight on diversity.
 #'
-#' The \eqn{\beta} weight can take values \eqn{0 < \beta < 2} and controls the cost of larger KOL team members. The default (\eqn{beta = 1})
+#' The \eqn{\beta} weight can take values \eqn{0 < \beta < 2} and controls the cost of larger KOL team members. The default (\eqn{\beta = 1})
 #'    assumes that each additional team member has a linear cost. Smaller values of \eqn{\beta} imply decreasing marginal costs, while
 #'    larger values of \eqn{\beta} imply increasing marginal costs.
 #'
@@ -58,8 +57,7 @@
 #' igraph::V(network)$gender <- sample(c("M","F"),26,replace=TRUE)  #Give the nodes a "gender"
 #' teams <- pick_kols(network,              #Find KOL teams in `network`
 #'                    m = 2,
-#'                    min = 2,              #containing 2-4 members
-#'                    max = 4,
+#'                    range = c(2,4),       #containing 2-4 members
 #'                    attribute = "gender", #that are gender diverse
 #'                    goal = "diffusion")   #and can help diffuse information
 #' teams$teams[1:10,]  #Look at the top 10 teams
@@ -68,8 +66,7 @@ pick_kols <- function(network,
                       tosource = TRUE,
                       goal = "diffusion",
                       m = 1,
-                      min = 1,
-                      max = 1,
+                      range = c(1,1),
                       top = NULL,
                       include = NULL,
                       exclude = NULL,
@@ -79,8 +76,11 @@ pick_kols <- function(network,
 
   #### Parameter Checks ####
   if (!methods::is(network,"matrix") & !methods::is(network,"igraph")) {stop("`network must be either a matrix or igraph object`")}
-  if (!is.numeric(min) | !is.numeric(max)) {stop("`min` and `max` must be positive integers")}
-  if (min%%1!=0 | min<1 | max%%1!=0 | max<1) {stop("`min` and `max` must be positive integers")}
+  if (length(range)!=2) {stop("`weights` must be a numeric vector of length 2")}
+    min <- min(range)
+    max <- max(range)
+    if (!is.numeric(min) | !is.numeric(max)) {stop("`min` and `max` must be positive integers")}
+    if (min%%1!=0 | min<1 | max%%1!=0 | max<1) {stop("`min` and `max` must be positive integers")}
   if (!is.numeric(m)) {stop("`m` must be a positive integer")}
   if (m%%1!=0 | m<1) {stop("`m` must be a positive integer")}
   if (!is.null(top)) {
@@ -88,8 +88,10 @@ pick_kols <- function(network,
     if (top%%1!=0 | top<1) {stop("`top` must be a positive integer")}
   }
   if (length(weights)!=2) {stop("`weights` must be a numeric vector of length 2")}
-  if (!is.numeric(weights[1]) | !is.numeric(weights[2])) {stop("`weights` must be a numeric vector of length 2")}
-  if (weights[1]<0.5 | weights[1]>1 | weights[2]<0 | weights[2]>2) {stop("the values in `weights` must be within the specified ranges")}
+    alpha <- weights[1]
+    beta <- weights[2]
+    if (!is.numeric(alpha) | !is.numeric(beta)) {stop("`weights` must be a numeric vector of length 2")}
+    if (alpha<0.5 | alpha>1 | beta<0 | beta>2) {stop("the values in `weights` must be within the specified ranges")}
 
   #If `attribute` is supplied and `network` is an igraph object, ensure attribute is present and extract it
   if (!is.null(attribute) & methods::is(network,"igraph")) {
@@ -202,8 +204,8 @@ pick_kols <- function(network,
   if (!is.null(attribute)) {dat$diversity <- diversity}  #If requested, include team diversity
 
   #### Assign teams an overall evaluation ####
-  if (is.null(attribute)) {dat$evaluation <- dat$breadth / (dat$cost ^ weights[2])}
-  if (!is.null(attribute)) {dat$evaluation <- ((dat$breadth ^ weights[1]) * (dat$diversity ^ (1-weights[1]))) / (dat$cost ^ weights[2])}
+  if (is.null(attribute)) {dat$evaluation <- dat$breadth / (dat$cost ^ beta)}
+  if (!is.null(attribute)) {dat$evaluation <- ((dat$breadth ^ alpha) * (dat$diversity ^ (1-alpha))) / (dat$cost ^ beta)}
 
   #### Sort and restrict team list ####
   if (is.null(attribute)) {dat <- dat[order(-dat$evaluation, -dat$breadth),]}  #Sort by overall evaluation, then break ties by breadth
