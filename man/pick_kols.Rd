@@ -9,8 +9,7 @@ pick_kols(
   tosource = TRUE,
   goal = "diffusion",
   m = 1,
-  min = 1,
-  max = 1,
+  range = c(1, 1),
   top = NULL,
   include = NULL,
   exclude = NULL,
@@ -28,9 +27,7 @@ pick_kols(
 
 \item{m}{integer: KOL team centrality parameter (\code{m == 1} is equivalent to simple degree centrality)}
 
-\item{min}{integer: minimum KOL team size}
-
-\item{max}{integer: maximum KOL team size}
+\item{range}{vector: a vector of length 2 containing the minimum and maximum number of KOLs on a team}
 
 \item{top}{numeric: restrict scope to the \code{top} nodes with the highest degree, closeness, or betweenness (useful for large networks)}
 
@@ -73,7 +70,7 @@ The default (\eqn{\alpha = .8}) places the majority of weight on the breadth of 
 considering the team's diversity. Smaller values of \eqn{\alpha} place less weight on breadth and more weight on diversity,
 while larger values of \eqn{\alpha} place more weight on breadth and less weight on diversity.
 
-The \eqn{\beta} weight can take values \eqn{0 < \beta < 2} and controls the cost of larger KOL team members. The default (\eqn{beta = 1})
+The \eqn{\beta} weight can take values \eqn{0 < \beta < 2} and controls the cost of larger KOL team members. The default (\eqn{\beta = 1})
 assumes that each additional team member has a linear cost. Smaller values of \eqn{\beta} imply decreasing marginal costs, while
 larger values of \eqn{\beta} imply increasing marginal costs.
 
@@ -96,8 +93,7 @@ igraph::V(network)$name <- letters[1:26]  #Give the nodes names
 igraph::V(network)$gender <- sample(c("M","F"),26,replace=TRUE)  #Give the nodes a "gender"
 teams <- pick_kols(network,              #Find KOL teams in `network`
                    m = 2,
-                   min = 2,              #containing 2-4 members
-                   max = 4,
+                   range = c(2,4),       #containing 2-4 members
                    attribute = "gender", #that are gender diverse
                    goal = "diffusion")   #and can help diffuse information
 teams$teams[1:10,]  #Look at the top 10 teams
