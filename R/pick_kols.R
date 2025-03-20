@@ -29,13 +29,14 @@
 #'    using \deqn{\frac{B}{C^\beta} \mbox{   or   } \frac{B^\alpha D^{1-\alpha}}{C^\beta}}
 #'
 #' The \eqn{\alpha} weight can take values \eqn{0.5 < \alpha < 1} and controls the weight placed on breadth relative to diversity.
-#'    The default (\eqn{\alpha = .8}) places the majority of weight on the breadth of the network that KOL teams cover, while still
-#'    considering the team's diversity. Smaller values of \eqn{\alpha} place less weight on breadth and more weight on diversity,
-#'    while larger values of \eqn{\alpha} place more weight on breadth and less weight on diversity.
+#'   Smaller values of \eqn{\alpha} place less weight on breadth and more weight on diversity, while larger values of \eqn{\alpha}
+#'   place more weight on breadth and less weight on diversity. The default (\eqn{\alpha = 0.9}) places the majority of weight on
+#'   the breadth of the network that KOL teams cover, while still considering the team's diversity (primarily as a tie-breaker).
 #'
-#' The \eqn{\beta} weight can take values \eqn{0 < \beta < 2} and controls the cost of larger KOL team members. The default (\eqn{\beta = 1})
-#'    assumes that each additional team member has a linear cost. Smaller values of \eqn{\beta} imply decreasing marginal costs, while
-#'    larger values of \eqn{\beta} imply increasing marginal costs.
+#' The \eqn{\beta} weight can take values \eqn{0 < \beta < 2} and controls the cost of larger KOL team members. Smaller values of
+#'    \eqn{\beta} imply decreasing marginal costs, while larger values of \eqn{\beta} imply increasing marginal costs. The default
+#'    (\eqn{\beta = 0.9}) assumes that team members have a slight diminishing marginal cost (i.e. the cost of each additional
+#'    team member is slightly smaller than the previous one).
 #'
 #' **Interpreting Edge Direction**
 #'
@@ -71,7 +72,7 @@ pick_kols <- function(network,
                       include = NULL,
                       exclude = NULL,
                       attribute = NULL,
-                      weights = c(.8, 1),
+                      weights = c(.9, .9),
                       file = NULL) {
 
   #### Parameter Checks ####
