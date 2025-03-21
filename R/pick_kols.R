@@ -168,7 +168,8 @@ pick_kols <- function(network,
   teams <- list()
   for (i in c(min:max)) {teams <- c(teams, utils::combn(eligible, i, simplify = FALSE))}  #Preliminary list
   if (!is.null(include)) {teams <- teams[which(lapply(teams, FUN = function(x) all(include %in% x))==TRUE)]}  #If `include` provided, remove teams missing required members
-
+  if (length(teams)==0) {stop("There are no eligible KOL teams.")}
+  
   #### Evaluate KOL teams ####
   #Compute m-reach (fraction of non-KOL nodes reachable by a KOL in up to m steps in adjacency matrix M)
   if (goal == "diffusion") {
